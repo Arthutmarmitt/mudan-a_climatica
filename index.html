@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Portal do Tempo Ecológico</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        :root {
+            --primary: #1b4332;
+            --secondary: #2d6a4f;
+            --accent: #52b788;
+            --light: #f0f7f4;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--light);
+            color: var(--primary);
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+
+        /* Barra Superior */
+        nav {
+            background-color: var(--primary);
+            color: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            animation: slideDown 0.6s ease-out;
+        }
+        nav a {
+            color: #ffb703;
+            text-decoration: none;
+            font-weight: bold;
+            transition: transform 0.2s, color 0.3s;
+            display: inline-block;
+        }
+        nav a:hover { 
+            color: #fff; 
+            transform: scale(1.05);
+        }
+
+        /* Header */
+        header {
+            text-align: center;
+            padding: 70px 20px;
+            background: linear-gradient(-45deg, #1b4332, #2d6a4f, #40916c, #52b788);
+            background-size: 400% 400%;
+            animation: gradientBG 10s ease infinite;
+            color: white;
+        }
+        header h1 {
+            font-size: 2.8em;
+            margin-bottom: 10px;
+            animation: popIn 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        header p {
+            font-size: 1.2em;
+            opacity: 0.95;
+            animation: fadeIn 1.2s ease;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        .revelar {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: all 0.8s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+        .revelar.ativo {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        h2 {
+            position: relative;
+            display: inline-block;
+            margin-bottom: 25px;
+        }
+        h2::after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 3px;
+            bottom: -5px;
+            left: 0;
+            background-color: var(--accent);
+            transform: scaleX(0);
+            transform-origin: right;
+            transition: transform 0.4s ease;
+        }
+        h2:hover::after {
+            transform: scaleX(1);
+            transform-origin: left;
+        }
+
+        /* Cards */
+        .grid-cards {
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .card-wrapper {
+            opacity: 0;
+            transform: translateY(30px);
+            animation: fadeInUp 0.7s ease forwards;
+        }
+        .card-wrapper:nth-child(1) { animation-delay: 0.1s; }
+        .card-wrapper:nth-child(2) { animation-delay: 0.3s; }
+        .card-wrapper:nth-child(3) { animation-delay: 0.5s; }
+
+        .card {
+            background: white;
+            border-radius: 14px;
+            overflow: hidden;
+            width: 330px;
+            height: 100%;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.08);
+            transition: transform 0.35s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.35s ease;
+        }
+        .card:hover {
+            transform: translateY(-12px);
+            box-shadow: 0 20px 30px rgba(27, 67, 50, 0.18);
+        }
+        .card img {
+            width: 100%;
+            height: 190px;
+            object-fit: cover;
+            transition: transform 0.5s ease;
+        }
+        .card:hover img { transform: scale(1.08); }
+        .card-body { padding: 25px; }
+        
+        .badge {
+            background: #d8f3dc;
+            color: var(--primary);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: bold;
+            display: inline-block;
+            margin-bottom: 12px;
+            animation: pulseBadge 3s infinite ease-in-out;
+        }
+
+        /* Simulador com Imagens */
+        .simulador-box {
+            background: white;
+            padding: 35px;
+            border-radius: 14px;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.08);
+            margin-top: 60px;
+            text-align: center;
+            border-top: 6px solid var(--secondary);
+        }
+        input[type=range] {
+            width: 80%;
+            margin: 25px 0;
+            accent-color: var(--secondary);
+            cursor: pointer;
+        }
+        .simulador-conteudo {
+            display: flex;
+            gap: 25px;
+            align-items: center;
+            background: #e8f5e9;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+            text-align: left;
+        }
+        .simulador-conteudo img {
+            width: 280px;
+            height: 170px;
+            object-fit: cover;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            transition: opacity 0.3s ease;
+        }
+        .simulador-texto {
+            flex: 1;
+            min-width: 250px;
+            font-size: 1.05em;
+            color: #1b4332;
+        }
+
+        /* Seção Sustentável */
+        .secao-sustentavel {
+            background: white;
+            padding: 35px;
+            border-radius: 14px;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.08);
+            margin-top: 60px;
+            border-left: 6px solid #40916c;
+        }
+        .meta-item {
+            background: #f8f9fa;
+            padding: 12px 18px;
+            margin: 10px 0;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 4px solid var(--accent);
+        }
+        .form-meta {
+            display: grid;
+            grid-template-columns: 1fr 2fr auto;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .form-meta select, .form-meta input {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+        }
+        .form-meta button {
+            background: var(--secondary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .form-meta button:hover { background: var(--primary); }
+
+        /* Calculadora */
+        .calculadora-box {
+            background: white;
+            padding: 35px;
+            border-radius: 14px;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.08);
+            margin-top: 60px;
+            border-top: 6px solid #ffb703;
+        }
+        .calc-inputs {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+        .calc-inputs div {
+            flex: 1;
+            min-width: 220px;
+        }
+        .calc-inputs label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .calc-inputs input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+        }
+        .resultado-calc {
+            background: #fff3cd;
+            color: #856404;
+            padding: 15px;
+            border-radius: 8px;
+            font-weight: bold;
+            margin-top: 15px;
+        }
+
+        /* Mapa */
+        #mapa {
+            height: 450px;
+            width: 100%;
+            border-radius: 14px;
+            margin-top: 20px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+        }
+
+        /* Quiz Aprimorado */
+        .quiz-box {
+            background: white;
+            padding: 35px;
+            border-radius: 14px;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.08);
+            margin-top: 60px;
+            border-left: 6px solid #ffb703;
+        }
+        .quiz-opcao {
+            display: block;
+            width: 100%;
+            text-align: left;
+            padding: 14px 18px;
+            margin: 10px 0;
+            background: #f8f9fa;
+            color: #212529;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.25s ease;
+        }
+        .quiz-opcao:hover {
+            background: #d8f3dc;
+            border-color: var(--accent);
+            transform: translateX(8px);
+        }
+
+        /* Dicas e Frases */
+        .extras {
+            display: flex;
+            gap: 25px;
+            margin-top: 60px;
+            margin-bottom: 40px;
+            flex-wrap: wrap;
+        }
+        .box-extra {
+            flex: 1;
+            min-width: 300px;
+            background: white;
+            padding: 30px;
+            border-radius: 14px;
+            border-left: 6px solid var(--accent);
+            box-shadow: 0 6px 15px rgba(0,0,0,0.06);
+        }
+        .form-dica {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .form-dica input {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+        }
+        .form-dica button {
+            padding: 12px 20px;
+            background: var(--secondary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .form-dica button:hover { background: var(--primary); }
+        blockquote {
+            font-style: italic;
+            color: #444;
+            border-left: 3px solid #95d5b2;
+            padding-left: 15px;
+            margin: 20px 0;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        @keyframes slideDown {
+            from { transform: translateY(-100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        @keyframes popIn {
+            0% { transform: scale(0.85); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        @keyframes fadeInUp {
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes pulseBadge {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.04); background-color: #b7e4c7; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <span>🌱 Bem-vindo(a), <b>{{ usuario }}</b>!</span>
+        <a href="/logout">Encerrar Sessão</a>
+    </nav>
+
+    <header>
+        <h1>Tempo Ecológico e Vida</h1>
+        <p>Descubra as escalas dinâmicas da natureza em harmonia com o planeta.</p>
+    </header>
+
+    <div class="container" id="secao-sustentavel">
+        <!-- Cards -->
+        <h2>Escalas do Tempo na Natureza</h2>
+        <div class="grid-cards">
+            {% for item in conceitos %}
+            <div class="card-wrapper">
+                <div class="card">
+                    <img src="{{ item.imagem }}" alt="{{ item.titulo }}">
+                    <div class="card-body">
+                        <span class="badge">{{ item.tempo }}</span>
+                        <h3>{{ item.titulo }}</h3>
+                        <p>{{ item.descricao }}</p>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Simulador com Imagens Dinâmicas -->
+        <div class="simulador-box revelar">
+            <h2>⏳ Simulador de Escala Temporal</h2>
+            <p>Arraste a barra para viajar no tempo e ver a transformação dos ecossistemas:</p>
+            <input type="range" id="sliderTempo" min="1" max="5" value="1" oninput="atualizarTempo(this.value)">
+            
+            <div class="simulador-conteudo">
+                <img id="imgTempo" src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=500&q=60" alt="Visual do Tempo">
+                <div class="simulador-texto" id="textoTempo">
+                    <b>1 Ano (Tempo Ecológico Curto):</b> Estações do ano, floração das plantas, migração de aves e ciclos de cheias dos rios.
+                </div>
+            </div>
+        </div>
+
+        <!-- Mapa Variado -->
+        <div class="revelar" style="margin-top: 60px;">
+            <h2>🗺️ Monitoramento Ecológico Interativo (Diversidade de Biomas)</h2>
+            <p>Explore diferentes biomas brasileiros e seus processos ecológicos ativos no mapa:</p>
+            <div id="mapa"></div>
+        </div>
+
+        <!-- Metas Semanais -->
+        <div class="secao-sustentavel revelar">
+            <h2>🌿 Minhas Ações e Metas Semanais</h2>
+            <p>Registre o que você fez esta semana para economizar água, energia e reduzir poluição:</p>
+            
+            <div style="margin-top: 15px;">
+                {% if metas %}
+                    {% for m in metas %}
+                        <div class="meta-item">
+                            <div>
+                                <b>[{{ m.acao }}]:</b> {{ m.detalhe }}
+                            </div>
+                            <span style="color: {% if m.feito %}#2d6a4f{% else %}#e63946{% endif %}; font-weight: bold;">
+                                {% if m.feito %}✓ Concluído{% else %}⏳ Em andamento{% endif %}
+                            </span>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p style="color: #666;">Nenhuma meta registrada ainda esta semana. Adicione abaixo!</p>
+                {% endif %}
+            </div>
+
+            <form class="form-meta" method="POST">
+                <input type="hidden" name="tipo_form" value="meta">
+                <select name="acao_meta" required>
+                    <option value="">Selecione o tipo...</option>
+                    <option value="Economia de Água">💧 Economia de Água</option>
+                    <option value="Economia de Energia">⚡ Economia de Energia</option>
+                    <option value="Redução de Poluição">♻️ Redução de Poluição</option>
+                </select>
+                <input type="text" name="detalhe_meta" placeholder="Ex: Fechei a torneira ao escovar os dentes..." required>
+                <button type="submit">Salvar Meta</button>
+            </form>
+        </div>
+
+        <!-- Calculadora -->
+        <div class="calculadora-box revelar">
+            <h2>🧮 Calculadora de Impacto Semanal</h2>
+            <p>Descubra quanto você economiza no tempo ecológico ajustando pequenos hábitos:</p>
+            <div class="calc-inputs">
+                <div>
+                    <label>Dias com banhos mais curtos (-3 min):</label>
+                    <input type="number" id="diasBanho" min="0" max="7" value="3" oninput="calcularImpacto()">
+                </div>
+                <div>
+                    <label>Aparelhos desligados da tomada por semana:</label>
+                    <input type="number" id="aparelhosTomada" min="0" max="20" value="5" oninput="calcularImpacto()">
+                </div>
+            </div>
+            <div class="resultado-calc" id="resultadoCalc">
+                Parabéns! Com essas ações, você economiza cerca de <b>36 litros de água</b> e evita o desperdício de energia semanalmente!
+            </div>
+        </div>
+
+        <!-- Quiz Aprimorado (Múltiplas Perguntas) -->
+        <div class="quiz-box revelar">
+            <h2>🧠 Desafio Ecológico (Quiz Interativo)</h2>
+            <div id="containerQuiz">
+                <p id="perguntaQuiz" style="font-size: 1.1em; font-weight: bold; margin-bottom: 20px;"></p>
+                <div id="opcoesQuiz"></div>
+                <p id="feedbackQuiz" style="font-weight: bold; margin-top: 15px; border-radius: 6px;"></p>
+            </div>
+        </div>
+
+        <!-- Dicas e Frases -->
+        <div class="extras" id="mural-dicas">
+            <div class="box-extra">
+                <h3>💡 Mural de Dicas Sustentáveis</h3>
+                <ul style="padding-left: 20px; color: #1b4332;">
+                    {% for dica in dicas %}
+                        <li style="margin-bottom: 12px; line-height: 1.5; background: #f8f9fa; padding: 10px; border-radius: 6px;">
+                            <b>{{ dica.autor }}:</b> {{ dica.texto }}
+                        </li>
+                    {% endfor %}
+                </ul>
+                <form class="form-dica" action="/painel" method="POST">
+                    <input type="hidden" name="tipo_form" value="dica">
+                    <input type="text" name="nova_dica" placeholder="Escreva sua dica ecológica..." required>
+                    <button type="submit">Adicionar Dica</button>
+                </form>
+            </div>
+
+            <div class="box-extra">
+                <h3>💬 Reflexões Ecológicas</h3>
+                {% for frase in frases %}
+                    <blockquote>{{ frase }}</blockquote>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // Scroll Reveal
+        function checarScroll() {
+            const elementos = document.querySelectorAll('.revelar');
+            const alturaJanela = window.innerHeight;
+            elementos.forEach(el => {
+                const topoElemento = el.getBoundingClientRect().top;
+                if (topoElemento < alturaJanela - 80) {
+                    el.classList.add('ativo');
+                }
+            });
+        }
+        window.addEventListener('scroll', checarScroll);
+        checarScroll();
+
+        // Mapa Variado de Biomas
+        var mapa = L.map('mapa').setView([-15.7801, -47.9292], 4);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap'
+        }).addTo(mapa);
+
+        var pontosVariados = [
+            { coords: [-3.4653, -62.2159], titulo: "Florestas da Amazônia", desc: "Ciclos hidrológicos, alta biodiversidade e sucessão florestal rápida." },
+            { coords: [-17.7073, -57.0011], titulo: "Áreas Alagadas do Pantanal", desc: "Dinâmica sazonal extrema de cheias e secas anuais." },
+            { coords: [-22.4114, -42.9657], titulo: "Reserva de Mata Atlântica", desc: "Reflorestamento ativo, recuperação de fauna e fragmentação florestal." },
+            { coords: [-15.9389, -47.8825], titulo: "Savanas do Cerrado", desc: "Adaptações ao fogo natural e raízes profundas no tempo ecológico." },
+            { coords: [-9.1760, -40.3089], titulo: "Caatinga Semiárida", desc: "Estratégias de resistência à seca e flora caducifólia." },
+            { coords: [-30.0346, -51.2177], titulo: "Pampas Sulistas", desc: "Ecossistemas de campos abertos e pastejo natural." }
+        ];
+
+        pontosVariados.forEach(function(p) {
+            L.marker(p.coords).addTo(mapa).bindPopup("<b>" + p.titulo + "</b><br>" + p.desc);
+        });
+
+        // Simulador de Tempo com Imagens
+        function atualizarTempo(valor) {
+            const box = document.getElementById("textoTempo");
+            const imgBox = document.getElementById("imgTempo");
+
+            const dadosTempo = {
+                1: {
+                    texto: "<b>1 Ano (Tempo Ecológico Curto):</b> Estações do ano, floração das plantas, migração de aves e ciclos de cheias dos rios.",
+                    img: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=500&q=60"
+                },
+                2: {
+                    texto: "<b>50 Anos (Tempo Ecológico Médio):</b> Sucessão ecológica: uma área desmatada volta a formar uma floresta jovem e atrai animais.",
+                    img: "https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=500&q=60"
+                },
+                3: {
+                    texto: "<b>10.000 Anos (Transição Ecológica/Evolutiva):</b> Fim da última Era do Gelo, mudanças nos biomas globais e adaptação de espécies.",
+                    img: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=500&q=60"
+                },
+                4: {
+                    texto: "<b>5 Milhões de Anos (Tempo Evolutivo):</b> Surgimento de novas espécies através da seleção natural e isolamento geográfico.",
+                    img: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=500&q=60"
+                },
+                5: {
+                    texto: "<b>100 Milhões de Anos (Tempo Geológico):</b> Separação dos continentes, surgimento de cordilheiras e extinções em massa.",
+                    img: "https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?auto=format&fit=crop&w=500&q=60"
+                }
+            };
+
+            imgBox.style.opacity = "0.3";
+            setTimeout(() => {
+                box.innerHTML = dadosTempo[valor].texto;
+                imgBox.src = dadosTempo[valor].img;
+                imgBox.style.opacity = "1";
+            }, 150);
+        }
+
+        // Calculadora
+        function calcularImpacto() {
+            const banho = document.getElementById("diasBanho").value || 0;
+            const tomada = document.getElementById("aparelhosTomada").value || 0;
+            
+            const litrosAgua = banho * 36;
+            const kwhEconomizado = tomada * 1.5;
+
+            const res = document.getElementById("resultadoCalc");
+            res.innerHTML = `Com base nas suas escolhas semanais: você economiza cerca de <b>${litrosAgua} litros de água</b> e evita o equivalente a <b>${kwhEconomizado.toFixed(1)} kWh</b> de energia desperdiçada!`;
+        }
+
+        // Quiz Aprimorado (Lógica Completa)
+        const perguntasQuiz = [
+            {
+                pergunta: "1. Qual escala de tempo estuda a recuperação de uma floresta após uma queimada?",
+                opcoes: [
+                    { texto: "A) Tempo Ecológico", correto: true, explicacao: "Correto! A sucessão ecológica ocorre em décadas ou séculos." },
+                    { texto: "B) Tempo Geológico", correto: false, explicacao: "Quase! O Tempo Geológico trata de milhões de anos." },
+                    { texto: "C) Tempo Evolutivo", correto: false, explicacao: "Incorreto. O Tempo Evolutivo foca no surgimento de novas espécies." }
+                ]
+            },
+            {
+                pergunta: "2. O surgimento de novas espécies através da adaptação e seleção natural ocorre em qual escala?",
+                opcoes: [
+                    { texto: "A) Tempo Ecológico", correto: false, explicacao: "Incorreto. Mudanças ecológicas são mais rápidas." },
+                    { texto: "B) Tempo Evolutivo", correto: true, explicacao: "Exato! O Tempo Evolutivo engloba milênios e milhões de anos de adaptação." },
+                    { texto: "C) Tempo Sazonal", correto: false, explicacao: "Incorreto. O tempo sazonal dura apenas meses." }
+                ]
+            },
+            {
+                pergunta: "3. A separação dos continentes e grandes extinções em massa pertencem a qual escala?",
+                opcoes: [
+                    { texto: "A) Tempo Ecológico", correto: false, explicacao: "Incorreto. É uma escala muito curta para tectônica de placas." },
+                    { texto: "B) Tempo Evolutivo", correto: false, explicacao: "Quase, mas eventos tectônicos globais abrangem eras ainda maiores." },
+                    { texto: "C) Tempo Geológico", correto: true, explicacao: "Perfeito! O Tempo Geológico mede eras de milhões a bilhões de anos." }
+                ]
+            }
+        ];
+
+        let perguntaAtual = 0;
+        let pontuacaoTotal = 0;
+
+        function carregarQuiz() {
+            const p = perguntasQuiz[perguntaAtual];
+            document.getElementById("perguntaQuiz").innerText = p.pergunta;
+            
+            const divOpcoes = document.getElementById("opcoesQuiz");
+            divOpcoes.innerHTML = "";
+            document.getElementById("feedbackQuiz").innerText = "";
+            document.getElementById("feedbackQuiz").style.backgroundColor = "transparent";
+
+            p.opcoes.forEach(op => {
+                const btn = document.createElement("button");
+                btn.className = "quiz-opcao";
+                btn.innerText = op.texto;
+                btn.onclick = () => responderQuiz(op.correto, op.explicacao, btn);
+                divOpcoes.appendChild(btn);
+            });
+        }
+
+        function responderQuiz(correto, explicacao, botao) {
+            const botoes = document.querySelectorAll('.quiz-opcao');
+            botoes.forEach(b => b.onclick = null);
+
+            const feedback = document.getElementById("feedbackQuiz");
+            feedback.innerText = explicacao;
+
+            if (correto) {
+                pontuacaoTotal++;
+                botao.style.backgroundColor = "#d8f3dc";
+                botao.style.color = "#1b4332";
+                feedback.style.color = "#1b4332";
+                feedback.style.backgroundColor = "#d8f3dc";
+                feedback.style.padding = "10px";
+            } else {
+                botao.style.backgroundColor = "#ffe5ec";
+                botao.style.color = "#900";
+                feedback.style.color = "#900";
+                feedback.style.backgroundColor = "#ffe5ec";
+                feedback.style.padding = "10px";
+            }
+
+            setTimeout(() => {
+                perguntaAtual++;
+                if (perguntaAtual < perguntasQuiz.length) {
+                    carregarQuiz();
+                } else {
+                    document.getElementById("containerQuiz").innerHTML = `
+                        <div style="text-align: center; padding: 20px;">
+                            <h3>🎉 Quiz Concluído!</h3>
+                            <p style="font-size: 1.2em; margin: 15px 0;">Você acertou <b>${pontuacaoTotal}</b> de <b>${perguntasQuiz.length}</b> perguntas.</p>
+                            <button onclick="reiniciarQuiz()" style="padding: 10px 20px; background: #2d6a4f; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">Tentar Novamente</button>
+                        </div>
+                    `;
+                }
+            }, 2500);
+        }
+
+        function reiniciarQuiz() {
+            perguntaAtual = 0;
+            pontuacaoTotal = 0;
+            document.getElementById("containerQuiz").innerHTML = `
+                <p id="perguntaQuiz" style="font-size: 1.1em; font-weight: bold; margin-bottom: 20px;"></p>
+                <div id="opcoesQuiz"></div>
+                <p id="feedbackQuiz" style="font-weight: bold; margin-top: 15px; border-radius: 6px;"></p>
+            `;
+            carregarQuiz();
+        }
+
+        carregarQuiz();
+    </script>
+</body>
+</html>

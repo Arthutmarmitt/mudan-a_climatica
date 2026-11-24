@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Acesso - Tempo Ecológico</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #1b4332, #40916c);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0;
+        }
+        .login-box {
+            background: white;
+            padding: 35px;
+            border-radius: 14px;
+            box-shadow: 0 12px 30px rgba(0,0,0,0.3);
+            width: 340px;
+            text-align: center;
+            animation: surgir 0.6s ease-out;
+        }
+        @keyframes surgir {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .abas {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #eee;
+        }
+        .aba {
+            flex: 1;
+            padding: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            color: #777;
+            transition: all 0.3s;
+        }
+        .aba.ativa {
+            color: #1b4332;
+            border-bottom: 3px solid #2d6a4f;
+        }
+        input {
+            width: 90%;
+            padding: 12px;
+            margin: 8px 0;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        button {
+            width: 98%;
+            padding: 12px;
+            margin-top: 10px;
+            background-color: #2d6a4f;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        button:hover { background-color: #1b4332; }
+        .erro { color: #d90429; background: #ffe5ec; padding: 8px; border-radius: 6px; font-size: 0.9em; margin-top: 12px; }
+        .sucesso { color: #1b4332; background: #d8f3dc; padding: 8px; border-radius: 6px; font-size: 0.9em; margin-top: 12px; }
+        .dica-login { font-size: 0.8em; color: #666; margin-top: 15px; }
+    </style>
+</head>
+<body>
+    <div class="login-box">
+        <h2>🌿 Portal Ecológico</h2>
+        
+        <div class="abas">
+            <div class="aba ativa" id="abaEntrar" onclick="mudarAba('entrar')">Entrar</div>
+            <div class="aba" id="abaCadastrar" onclick="mudarAba('cadastrar')">Criar Conta</div>
+        </div>
+
+        <!-- Formulário de Login -->
+        <form id="formEntrar" method="POST">
+            <input type="hidden" name="acao" value="entrar">
+            <input type="text" name="usuario" placeholder="Seu nome de usuário" required>
+            <input type="password" name="senha" placeholder="Sua senha" required>
+            <button type="submit">Entrar no Portal</button>
+        </form>
+
+        <!-- Formulário de Cadastro (Oculto inicialmente) -->
+        <form id="formCadastrar" method="POST" style="display: none;">
+            <input type="hidden" name="acao" value="cadastrar">
+            <input type="text" name="usuario" placeholder="Escolha um nome de usuário" required>
+            <input type="password" name="senha" placeholder="Crie uma senha" required>
+            <button type="submit" style="background-color: #40916c;">Cadastrar Conta</button>
+        </form>
+
+        {% if erro %}
+            <p class="erro">{{ erro }}</p>
+        {% endif %}
+        {% if sucesso %}
+            <p class="sucesso">{{ sucesso }}</p>
+        {% endif %}
+
+        <p class="dica-login">Conta padrão: <b>admin</b> / <b>1234</b> (ou crie a sua acima!)</p>
+    </div>
+
+    <script>
+        function mudarAba(tipo) {
+            const formEntrar = document.getElementById('formEntrar');
+            const formCadastrar = document.getElementById('formCadastrar');
+            const abaEntrar = document.getElementById('abaEntrar');
+            const abaCadastrar = document.getElementById('abaCadastrar');
+
+            if (tipo === 'entrar') {
+                formEntrar.style.display = 'block';
+                formCadastrar.style.display = 'none';
+                abaEntrar.classList.add('ativa');
+                abaCadastrar.classList.remove('ativa');
+            } else {
+                formEntrar.style.display = 'none';
+                formCadastrar.style.display = 'block';
+                abaCadastrar.classList.add('ativa');
+                abaEntrar.classList.remove('ativa');
+            }
+        }
+    </script>
+</body>
+</html>
