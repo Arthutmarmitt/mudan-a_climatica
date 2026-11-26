@@ -2,32 +2,47 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Portal do Tempo Ecológico</title>
+    <title>Portal do Tempo Ecológico Global</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
             --primary: #1b4332;
             --secondary: #2d6a4f;
             --accent: #52b788;
-            --light: #f0f7f4;
+            --bg-body: #f0f7f4;
+            --bg-card: #ffffff;
+            --text-main: #1b4332;
+            --text-muted: #555555;
+            --bg-subtle: #f8f9fa;
         }
 
-        html {
-            scroll-behavior: smooth;
+        body.dark-mode {
+            --primary: #52b788;
+            --secondary: #40916c;
+            --accent: #74c69d;
+            --bg-body: #081c15;
+            --bg-card: #1b4332;
+            --text-main: #d8f3dc;
+            --text-muted: #b7e4c7;
+            --bg-subtle: #143628;
         }
+
+        html { scroll-behavior: smooth; }
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--light);
-            color: var(--primary);
+            background-color: var(--bg-body);
+            color: var(--text-main);
             margin: 0;
             padding: 0;
             overflow-x: hidden;
+            transition: background-color 0.5s ease, color 0.5s ease;
         }
 
-        /* Barra Superior */
         nav {
-            background-color: var(--primary);
+            background-color: #1b4332;
             color: white;
             padding: 15px 30px;
             display: flex;
@@ -36,183 +51,161 @@
             position: sticky;
             top: 0;
             z-index: 1000;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-            animation: slideDown 0.6s ease-out;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            flex-wrap: wrap;
+            gap: 10px;
         }
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .btn-nav {
+            background: rgba(255,255,255,0.15);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+            padding: 7px 14px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.88em;
+            transition: all 0.3s ease;
+        }
+        .btn-nav:hover { background: rgba(255,255,255,0.3); transform: scale(1.05); }
+        .btn-nav.ativo-som { background: #52b788; color: #081c15; font-weight: bold; }
+
         nav a {
             color: #ffb703;
             text-decoration: none;
             font-weight: bold;
-            transition: transform 0.2s, color 0.3s;
-            display: inline-block;
-        }
-        nav a:hover { 
-            color: #fff; 
-            transform: scale(1.05);
+            margin-left: 8px;
         }
 
-        /* Header */
         header {
             text-align: center;
-            padding: 70px 20px;
-            background: linear-gradient(-45deg, #1b4332, #2d6a4f, #40916c, #52b788);
+            padding: 75px 20px;
+            background: linear-gradient(-45deg, #081c15, #1b4332, #2d6a4f, #40916c, #52b788);
             background-size: 400% 400%;
-            animation: gradientBG 10s ease infinite;
+            animation: gradientBG 12s ease infinite;
             color: white;
         }
-        header h1 {
-            font-size: 2.8em;
-            margin-bottom: 10px;
-            animation: popIn 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-        header p {
-            font-size: 1.2em;
-            opacity: 0.95;
-            animation: fadeIn 1.2s ease;
-        }
+        header h1 { font-size: 2.8em; margin-bottom: 10px; }
 
-        .container {
-            max-width: 1100px;
-            margin: 40px auto;
-            padding: 0 20px;
-        }
+        .container { max-width: 1150px; margin: 40px auto; padding: 0 20px; }
 
         .revelar {
             opacity: 0;
             transform: translateY(40px);
-            transition: all 0.8s cubic-bezier(0.25, 0.8, 0.25, 1);
+            transition: opacity 0.8s ease, transform 0.8s ease;
         }
-        .revelar.ativo {
-            opacity: 1;
-            transform: translateY(0);
-        }
+        .revelar.ativo { opacity: 1; transform: translateY(0); }
 
-        h2 {
-            position: relative;
-            display: inline-block;
-            margin-bottom: 25px;
-        }
-        h2::after {
-            content: '';
-            position: absolute;
-            width: 100%;
-            height: 3px;
-            bottom: -5px;
-            left: 0;
-            background-color: var(--accent);
-            transform: scaleX(0);
-            transform-origin: right;
-            transition: transform 0.4s ease;
-        }
-        h2:hover::after {
-            transform: scaleX(1);
-            transform-origin: left;
-        }
+        h2 { position: relative; display: inline-block; margin-bottom: 20px; }
 
-        /* Cards */
-        .grid-cards {
+        .perfil-bar {
             display: flex;
-            gap: 30px;
+            gap: 20px;
+            background: var(--bg-card);
+            padding: 22px 30px;
+            border-radius: 14px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+            margin-bottom: 45px;
+            justify-content: space-between;
+            align-items: center;
             flex-wrap: wrap;
-            justify-content: center;
+            border-bottom: 4px solid var(--accent);
         }
-        .card-wrapper {
-            opacity: 0;
-            transform: translateY(30px);
-            animation: fadeInUp 0.7s ease forwards;
+        .stat-item { text-align: center; }
+        .stat-num { font-size: 1.9em; font-weight: bold; color: var(--accent); }
+        .btn-certificado {
+            background: linear-gradient(45deg, #ffb703, #fb8500);
+            color: #081c15;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(251, 133, 0, 0.35);
         }
-        .card-wrapper:nth-child(1) { animation-delay: 0.1s; }
-        .card-wrapper:nth-child(2) { animation-delay: 0.3s; }
-        .card-wrapper:nth-child(3) { animation-delay: 0.5s; }
 
+        .grid-cards { display: flex; gap: 30px; flex-wrap: wrap; justify-content: center; }
         .card {
-            background: white;
+            background: var(--bg-card);
             border-radius: 14px;
             overflow: hidden;
-            width: 330px;
-            height: 100%;
-            box-shadow: 0 6px 15px rgba(0,0,0,0.08);
-            transition: transform 0.35s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.35s ease;
+            width: 340px;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.08);
         }
-        .card:hover {
-            transform: translateY(-12px);
-            box-shadow: 0 20px 30px rgba(27, 67, 50, 0.18);
-        }
-        .card img {
-            width: 100%;
-            height: 190px;
-            object-fit: cover;
-            transition: transform 0.5s ease;
-        }
-        .card:hover img { transform: scale(1.08); }
+        .card img { width: 100%; height: 195px; object-fit: cover; }
         .card-body { padding: 25px; }
-        
         .badge {
             background: #d8f3dc;
-            color: var(--primary);
-            padding: 5px 12px;
+            color: #1b4332;
+            padding: 5px 14px;
             border-radius: 20px;
             font-size: 0.85em;
             font-weight: bold;
             display: inline-block;
             margin-bottom: 12px;
-            animation: pulseBadge 3s infinite ease-in-out;
         }
 
-        /* Simulador com Imagens */
-        .simulador-box {
-            background: white;
+        .box-secao {
+            background: var(--bg-card);
             padding: 35px;
             border-radius: 14px;
-            box-shadow: 0 6px 15px rgba(0,0,0,0.08);
-            margin-top: 60px;
-            text-align: center;
-            border-top: 6px solid var(--secondary);
+            box-shadow: 0 8px 22px rgba(0,0,0,0.08);
+            margin-top: 50px;
         }
-        input[type=range] {
-            width: 80%;
-            margin: 25px 0;
-            accent-color: var(--secondary);
-            cursor: pointer;
-        }
+
+        input[type=range] { width: 80%; margin: 25px 0; accent-color: var(--accent); cursor: pointer; }
         .simulador-conteudo {
             display: flex;
             gap: 25px;
             align-items: center;
-            background: #e8f5e9;
-            padding: 20px;
-            border-radius: 10px;
-            margin-top: 15px;
+            background: var(--bg-subtle);
+            padding: 22px;
+            border-radius: 12px;
             flex-wrap: wrap;
-            text-align: left;
         }
         .simulador-conteudo img {
-            width: 280px;
-            height: 170px;
+            width: 290px;
+            height: 175px;
             object-fit: cover;
-            border-radius: 8px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            border-radius: 10px;
             transition: opacity 0.3s ease;
         }
-        .simulador-texto {
-            flex: 1;
-            min-width: 250px;
-            font-size: 1.05em;
-            color: #1b4332;
-        }
+        .img-trocando { opacity: 0.2 !important; }
 
-        /* Seção Sustentável */
-        .secao-sustentavel {
-            background: white;
-            padding: 35px;
-            border-radius: 14px;
-            box-shadow: 0 6px 15px rgba(0,0,0,0.08);
-            margin-top: 60px;
-            border-left: 6px solid #40916c;
+        .decomp-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
         }
+        .decomp-card {
+            background: var(--bg-subtle);
+            padding: 16px;
+            border-radius: 10px;
+            border-left: 5px solid #ffb703;
+        }
+        .barra-tempo-bg {
+            width: 100%;
+            height: 8px;
+            background: rgba(128,128,128,0.2);
+            border-radius: 5px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+        .barra-tempo-fill { height: 100%; background: #e63946; border-radius: 5px; }
+
+        #mapa { height: 460px; width: 100%; border-radius: 14px; margin-top: 20px; z-index: 1; }
+
+        .grid-metas { display: flex; gap: 30px; flex-wrap: wrap; align-items: flex-start; }
+        .lista-metas { flex: 2; min-width: 300px; }
+        .coluna-direita { flex: 1; min-width: 270px; display: flex; flex-direction: column; gap: 25px; }
+
         .meta-item {
-            background: #f8f9fa;
-            padding: 12px 18px;
+            background: var(--bg-subtle);
+            padding: 14px 18px;
             margin: 10px 0;
             border-radius: 8px;
             display: flex;
@@ -220,191 +213,189 @@
             align-items: center;
             border-left: 4px solid var(--accent);
         }
-        .form-meta {
-            display: grid;
-            grid-template-columns: 1fr 2fr auto;
-            gap: 10px;
-            margin-top: 20px;
-        }
-        .form-meta select, .form-meta input {
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-        }
-        .form-meta button {
-            background: var(--secondary);
-            color: white;
+        .btn-concluir {
+            background: var(--accent);
+            color: #081c15;
             border: none;
-            padding: 10px 20px;
+            padding: 7px 14px;
             border-radius: 6px;
             cursor: pointer;
             font-weight: bold;
         }
-        .form-meta button:hover { background: var(--primary); }
 
-        /* Calculadora */
-        .calculadora-box {
-            background: white;
-            padding: 35px;
-            border-radius: 14px;
-            box-shadow: 0 6px 15px rgba(0,0,0,0.08);
-            margin-top: 60px;
-            border-top: 6px solid #ffb703;
+        .ranking-box {
+            background: var(--bg-subtle);
+            padding: 20px;
+            border-radius: 12px;
+            border-top: 4px solid #ffb703;
         }
-        .calc-inputs {
+        .ranking-row {
             display: flex;
-            gap: 15px;
-            flex-wrap: wrap;
-            margin: 20px 0;
+            justify-content: space-between;
+            padding: 9px 10px;
+            border-bottom: 1px solid rgba(128,128,128,0.15);
+            font-size: 0.95em;
         }
-        .calc-inputs div {
-            flex: 1;
-            min-width: 220px;
-        }
-        .calc-inputs label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-        }
-        .calc-inputs input {
-            width: 100%;
-            padding: 10px;
+
+        .form-meta { display: grid; grid-template-columns: 1fr 2fr auto; gap: 10px; margin-top: 20px; }
+        input, select {
+            padding: 11px;
             border: 1px solid #ccc;
             border-radius: 6px;
+            background: var(--bg-subtle);
+            color: var(--text-main);
         }
-        .resultado-calc {
-            background: #fff3cd;
-            color: #856404;
-            padding: 15px;
-            border-radius: 8px;
+        .btn-padrao {
+            background: var(--secondary);
+            color: white;
+            border: none;
+            padding: 11px 22px;
+            border-radius: 6px;
+            cursor: pointer;
             font-weight: bold;
-            margin-top: 15px;
         }
 
-        /* Mapa */
-        #mapa {
-            height: 450px;
-            width: 100%;
-            border-radius: 14px;
-            margin-top: 20px;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-        }
+        .calc-inputs { display: flex; gap: 15px; flex-wrap: wrap; margin: 20px 0; }
+        .calc-inputs div { flex: 1; min-width: 220px; }
+        .resultado-calc { background: #fff3cd; color: #856404; padding: 16px; border-radius: 8px; font-weight: bold; }
 
-        /* Quiz Aprimorado */
-        .quiz-box {
-            background: white;
-            padding: 35px;
-            border-radius: 14px;
-            box-shadow: 0 6px 15px rgba(0,0,0,0.08);
-            margin-top: 60px;
-            border-left: 6px solid #ffb703;
-        }
         .quiz-opcao {
             display: block;
             width: 100%;
             text-align: left;
-            padding: 14px 18px;
+            padding: 15px 18px;
             margin: 10px 0;
-            background: #f8f9fa;
-            color: #212529;
-            border: 2px solid #e9ecef;
+            background: var(--bg-subtle);
+            color: var(--text-main);
+            border: 2px solid rgba(128,128,128,0.2);
             border-radius: 8px;
             cursor: pointer;
             font-size: 1em;
-            transition: all 0.25s ease;
-        }
-        .quiz-opcao:hover {
-            background: #d8f3dc;
-            border-color: var(--accent);
-            transform: translateX(8px);
         }
 
-        /* Dicas e Frases */
-        .extras {
-            display: flex;
-            gap: 25px;
-            margin-top: 60px;
-            margin-bottom: 40px;
-            flex-wrap: wrap;
-        }
+        .extras { display: flex; gap: 25px; margin-top: 50px; margin-bottom: 40px; flex-wrap: wrap; }
         .box-extra {
             flex: 1;
             min-width: 300px;
-            background: white;
+            background: var(--bg-card);
             padding: 30px;
             border-radius: 14px;
             border-left: 6px solid var(--accent);
-            box-shadow: 0 6px 15px rgba(0,0,0,0.06);
+            box-shadow: 0 6px 18px rgba(0,0,0,0.06);
         }
-        .form-dica {
+        .dica-card {
+            margin-bottom: 12px;
+            line-height: 1.5;
+            background: var(--bg-subtle);
+            padding: 13px 16px;
+            border-radius: 8px;
+            list-style: none;
             display: flex;
-            gap: 10px;
-            margin-top: 20px;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
         }
-        .form-dica input {
-            flex: 1;
-            padding: 12px;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-        }
-        .form-dica button {
-            padding: 12px 20px;
-            background: var(--secondary);
-            color: white;
-            border: none;
-            border-radius: 6px;
+        .btn-curtir {
+            background: rgba(82, 183, 136, 0.2);
+            color: var(--text-main);
+            border: 1px solid var(--accent);
+            padding: 6px 12px;
+            border-radius: 20px;
             cursor: pointer;
             font-weight: bold;
         }
-        .form-dica button:hover { background: var(--primary); }
-        blockquote {
-            font-style: italic;
-            color: #444;
-            border-left: 3px solid #95d5b2;
-            padding-left: 15px;
-            margin: 20px 0;
+
+        .modal-cert {
+            display: none;
+            position: fixed;
+            z-index: 3000;
+            left: 0; top: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.75);
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .certificado-papel {
+            background: #fffdf7;
+            color: #1b4332;
+            max-width: 720px;
+            width: 100%;
+            padding: 45px;
+            border: 12px double #2d6a4f;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.5);
         }
 
-        @keyframes gradientBG {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
+        #toast {
+            visibility: hidden;
+            min-width: 270px;
+            background-color: #2d6a4f;
+            color: #fff;
+            text-align: center;
+            border-radius: 10px;
+            padding: 16px 20px;
+            position: fixed;
+            z-index: 2000;
+            right: 30px;
+            bottom: 30px;
+            font-weight: bold;
+            opacity: 0;
+            transition: opacity 0.4s ease;
         }
-        @keyframes slideDown {
-            from { transform: translateY(-100%); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-        @keyframes popIn {
-            0% { transform: scale(0.85); opacity: 0; }
-            100% { transform: scale(1); opacity: 1; }
-        }
-        @keyframes fadeInUp {
-            to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes pulseBadge {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.04); background-color: #b7e4c7; }
-        }
+        #toast.mostrar { visibility: visible; opacity: 1; }
+
+        @keyframes gradientBG { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
     </style>
 </head>
 <body>
 
     <nav>
-        <span>🌱 Bem-vindo(a), <b>{{ usuario }}</b>!</span>
-        <a href="/logout">Encerrar Sessão</a>
+        <span><i class="fa-solid fa-earth-americas"></i> Olá, <b>{{ usuario }}</b>!</span>
+        <div class="nav-actions">
+            <button class="btn-nav" onclick="alternarSom()" id="btnSom">
+                <i class="fa-solid fa-volume-xmark"></i> Som da Floresta
+            </button>
+            <button class="btn-nav" onclick="alternarTema()" id="btnTema">
+                <i class="fa-solid fa-moon"></i> Modo Escuro
+            </button>
+            <a href="/logout"><i class="fa-solid fa-right-from-bracket"></i> Sair</a>
+        </div>
     </nav>
 
     <header>
-        <h1>Tempo Ecológico e Vida</h1>
-        <p>Descubra as escalas dinâmicas da natureza em harmonia com o planeta.</p>
+        <h1><i class="fa-solid fa-seedling"></i> Tempo Ecológico e Vida</h1>
+        <p>Explore as escalas dinâmicas da natureza e os grandes biomas ao redor do planeta.</p>
     </header>
 
-    <div class="container" id="secao-sustentavel">
-        <!-- Cards -->
-        <h2>Escalas do Tempo na Natureza</h2>
-        <div class="grid-cards">
-            {% for item in conceitos %}
-            <div class="card-wrapper">
+    <div class="container">
+        <div class="perfil-bar">
+            <div style="flex: 2; min-width: 250px;">
+                <div style="font-size: 0.9em; color: var(--text-muted);"><i class="fa-solid fa-id-badge"></i> Seu Status Ecológico Atual:</div>
+                <div style="font-size: 1.25em; font-weight: bold; color: {{ cor_status }}; margin-top: 4px;">{{ status_usuario }}</div>
+                {% if pode_certificado %}
+                    <button class="btn-certificado" style="margin-top: 10px;" onclick="abrirCertificado()">
+                        <i class="fa-solid fa-award"></i> Emitir Meu Certificado Oficial
+                    </button>
+                {% else %}
+                    <small style="color: var(--text-muted);">Conclua 5 metas semanais para desbloquear seu Certificado!</small>
+                {% endif %}
+            </div>
+            <div class="stat-item">
+                <div class="stat-num">{{ metas_concluidas }}</div>
+                <div><i class="fa-solid fa-check-circle"></i> Concluídas</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-num">{{ total_dicas_usuario }}</div>
+                <div><i class="fa-solid fa-lightbulb"></i> Dicas</div>
+            </div>
+        </div>
+
+        <div class="revelar">
+            <h2><i class="fa-solid fa-layer-group"></i> Escalas do Tempo na Natureza</h2>
+            <div class="grid-cards">
+                {% for item in conceitos %}
                 <div class="card">
                     <img src="{{ item.imagem }}" alt="{{ item.titulo }}">
                     <div class="card-body">
@@ -413,70 +404,93 @@
                         <p>{{ item.descricao }}</p>
                     </div>
                 </div>
+                {% endfor %}
             </div>
-            {% endfor %}
         </div>
 
-        <!-- Simulador com Imagens Dinâmicas -->
-        <div class="simulador-box revelar">
-            <h2>⏳ Simulador de Escala Temporal</h2>
+        <div class="box-secao revelar" style="text-align: center; border-top: 6px solid var(--secondary);">
+            <h2><i class="fa-solid fa-clock-rotate-left"></i> Simulador de Escala Temporal</h2>
             <p>Arraste a barra para viajar no tempo e ver a transformação dos ecossistemas:</p>
             <input type="range" id="sliderTempo" min="1" max="5" value="1" oninput="atualizarTempo(this.value)">
-            
             <div class="simulador-conteudo">
                 <img id="imgTempo" src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=500&q=60" alt="Visual do Tempo">
-                <div class="simulador-texto" id="textoTempo">
+                <div style="flex: 1; text-align: left;" id="textoTempo">
                     <b>1 Ano (Tempo Ecológico Curto):</b> Estações do ano, floração das plantas, migração de aves e ciclos de cheias dos rios.
                 </div>
             </div>
         </div>
 
-        <!-- Mapa Variado -->
-        <div class="revelar" style="margin-top: 60px;">
-            <h2>🗺️ Monitoramento Ecológico Interativo (Diversidade de Biomas)</h2>
-            <p>Explore diferentes biomas brasileiros e seus processos ecológicos ativos no mapa:</p>
+        <div class="box-secao revelar" style="border-left: 6px solid #e63946;">
+            <h2><i class="fa-solid fa-recycle"></i> Tempo Ecológico de Decomposição</h2>
+            <p>Pesquise um resíduo para comparar o tempo que ele leva para desaparecer na natureza com a vida humana (~80 anos):</p>
+            <input type="text" id="buscaDecomp" onkeyup="filtrarDecomp()" placeholder="🔍 Digite: plástico, vidro, papel, chiclete, pilha..." style="width: 96%; max-width: 500px;">
+            <div class="decomp-grid" id="gridDecomp"></div>
+        </div>
+
+        <div class="box-secao revelar">
+            <h2><i class="fa-solid fa-globe"></i> Monitoramento Ecológico Global (14 Biomas)</h2>
+            <p>Clique nos marcadores espalhados pelos continentes para explorar os biomas da Terra:</p>
             <div id="mapa"></div>
         </div>
 
-        <!-- Metas Semanais -->
-        <div class="secao-sustentavel revelar">
-            <h2>🌿 Minhas Ações e Metas Semanais</h2>
-            <p>Registre o que você fez esta semana para economizar água, energia e reduzir poluição:</p>
-            
-            <div style="margin-top: 15px;">
-                {% if metas %}
-                    {% for m in metas %}
-                        <div class="meta-item">
-                            <div>
-                                <b>[{{ m.acao }}]:</b> {{ m.detalhe }}
+        <div class="box-secao revelar" id="secao-sustentavel" style="border-left: 6px solid #40916c;">
+            <h2><i class="fa-solid fa-leaf"></i> Minhas Ações Semanais & Ranking</h2>
+            <div class="grid-metas">
+                <div class="lista-metas">
+                    <p>Registre suas ações de economia de água, energia e redução de poluição:</p>
+                    {% if metas %}
+                        {% for m in metas %}
+                            <div class="meta-item">
+                                <div><b>[{{ m.acao }}]:</b> {{ m.detalhe }}</div>
+                                {% if m.feito %}
+                                    <span style="color: var(--accent); font-weight: bold;"><i class="fa-solid fa-check"></i> Concluído</span>
+                                {% else %}
+                                    <form method="POST" style="margin: 0;">
+                                        <input type="hidden" name="tipo_form" value="concluir_meta">
+                                        <input type="hidden" name="meta_id" value="{{ m.id }}">
+                                        <button type="submit" class="btn-concluir">Concluir</button>
+                                    </form>
+                                {% endif %}
                             </div>
-                            <span style="color: {% if m.feito %}#2d6a4f{% else %}#e63946{% endif %}; font-weight: bold;">
-                                {% if m.feito %}✓ Concluído{% else %}⏳ Em andamento{% endif %}
-                            </span>
-                        </div>
-                    {% endfor %}
-                {% else %}
-                    <p style="color: #666;">Nenhuma meta registrada ainda esta semana. Adicione abaixo!</p>
-                {% endif %}
-            </div>
+                        {% endfor %}
+                    {% else %}
+                        <p>Nenhuma meta registrada ainda. Adicione abaixo!</p>
+                    {% endif %}
 
-            <form class="form-meta" method="POST">
-                <input type="hidden" name="tipo_form" value="meta">
-                <select name="acao_meta" required>
-                    <option value="">Selecione o tipo...</option>
-                    <option value="Economia de Água">💧 Economia de Água</option>
-                    <option value="Economia de Energia">⚡ Economia de Energia</option>
-                    <option value="Redução de Poluição">♻️ Redução de Poluição</option>
-                </select>
-                <input type="text" name="detalhe_meta" placeholder="Ex: Fechei a torneira ao escovar os dentes..." required>
-                <button type="submit">Salvar Meta</button>
-            </form>
+                    <form class="form-meta" method="POST">
+                        <input type="hidden" name="tipo_form" value="meta">
+                        <select name="acao_meta" required>
+                            <option value="">Categoria...</option>
+                            <option value="Economia de Água">💧 Água</option>
+                            <option value="Economia de Energia">⚡ Energia</option>
+                            <option value="Redução de Poluição">♻️ Poluição</option>
+                        </select>
+                        <input type="text" name="detalhe_meta" placeholder="Ex: Reduzi o banho em 3 minutos..." required>
+                        <button type="submit" class="btn-padrao">Salvar</button>
+                    </form>
+                </div>
+
+                <div class="coluna-direita">
+                    <div class="ranking-box">
+                        <h4 style="margin-top: 0;"><i class="fa-solid fa-trophy" style="color: #ffb703;"></i> Top Economizadores</h4>
+                        {% for r in ranking %}
+                            <div class="ranking-row">
+                                <span><b>#{{ loop.index }}</b> {{ r.usuario }}</span>
+                                <span style="color: var(--accent); font-weight: bold;">{{ r.pontos }} metas</span>
+                            </div>
+                        {% endfor %}
+                    </div>
+
+                    <div style="text-align: center;">
+                        <h4>Seu Progresso</h4>
+                        <canvas id="graficoMetas"></canvas>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <!-- Calculadora -->
-        <div class="calculadora-box revelar">
-            <h2>🧮 Calculadora de Impacto Semanal</h2>
-            <p>Descubra quanto você economiza no tempo ecológico ajustando pequenos hábitos:</p>
+        <div class="box-secao revelar" style="border-top: 6px solid #ffb703;">
+            <h2><i class="fa-solid fa-calculator"></i> Calculadora de Impacto Semanal</h2>
             <div class="calc-inputs">
                 <div>
                     <label>Dias com banhos mais curtos (-3 min):</label>
@@ -488,13 +502,12 @@
                 </div>
             </div>
             <div class="resultado-calc" id="resultadoCalc">
-                Parabéns! Com essas ações, você economiza cerca de <b>36 litros de água</b> e evita o desperdício de energia semanalmente!
+                Com base nas suas escolhas semanais: você economiza cerca de <b>108 litros de água</b> e evita o equivalente a <b>7.5 kWh</b> de energia desperdiçada!
             </div>
         </div>
 
-        <!-- Quiz Aprimorado (Múltiplas Perguntas) -->
-        <div class="quiz-box revelar">
-            <h2>🧠 Desafio Ecológico (Quiz Interativo)</h2>
+        <div class="box-secao revelar" style="border-left: 6px solid #ffb703;">
+            <h2><i class="fa-solid fa-brain"></i> Desafio Ecológico (Quiz Interativo)</h2>
             <div id="containerQuiz">
                 <p id="perguntaQuiz" style="font-size: 1.1em; font-weight: bold; margin-bottom: 20px;"></p>
                 <div id="opcoesQuiz"></div>
@@ -502,156 +515,281 @@
             </div>
         </div>
 
-        <!-- Dicas e Frases -->
-        <div class="extras" id="mural-dicas">
+        <div class="extras revelar" id="mural-dicas">
             <div class="box-extra">
-                <h3>💡 Mural de Dicas Sustentáveis</h3>
-                <ul style="padding-left: 20px; color: #1b4332;">
+                <h3><i class="fa-solid fa-comments"></i> Mural de Dicas (Mais Apoiadas)</h3>
+                <input type="text" id="filtroDicas" onkeyup="filtrarDicas()" placeholder="🔍 Pesquisar dicas..." style="width: 94%; margin-bottom: 15px;">
+
+                <ul id="listaDicas" style="padding-left: 0;">
                     {% for dica in dicas %}
-                        <li style="margin-bottom: 12px; line-height: 1.5; background: #f8f9fa; padding: 10px; border-radius: 6px;">
-                            <b>{{ dica.autor }}:</b> {{ dica.texto }}
+                        <li class="dica-card">
+                            <div>
+                                <b><i class="fa-solid fa-user"></i> {{ dica.autor }}:</b> {{ dica.texto }}
+                            </div>
+                            <form method="POST" style="margin: 0;">
+                                <input type="hidden" name="tipo_form" value="curtir_dica">
+                                <input type="hidden" name="dica_id" value="{{ dica.id }}">
+                                <button type="submit" class="btn-curtir">🌿 {{ dica.curtidas }}</button>
+                            </form>
                         </li>
                     {% endfor %}
                 </ul>
-                <form class="form-dica" action="/painel" method="POST">
+                <form style="display: flex; gap: 10px; margin-top: 15px;" action="/painel" method="POST">
                     <input type="hidden" name="tipo_form" value="dica">
-                    <input type="text" name="nova_dica" placeholder="Escreva sua dica ecológica..." required>
-                    <button type="submit">Adicionar Dica</button>
+                    <input type="text" name="nova_dica" placeholder="Escreva sua dica ecológica..." style="flex: 1;" required>
+                    <button type="submit" class="btn-padrao">Publicar</button>
                 </form>
             </div>
 
             <div class="box-extra">
-                <h3>💬 Reflexões Ecológicas</h3>
+                <h3><i class="fa-solid fa-quote-left"></i> Reflexões Ecológicas</h3>
                 {% for frase in frases %}
-                    <blockquote>{{ frase }}</blockquote>
+                    <blockquote style="font-style: italic; border-left: 3px solid var(--accent); padding-left: 15px; margin: 20px 0;">
+                        {{ frase }}
+                    </blockquote>
                 {% endfor %}
             </div>
         </div>
     </div>
 
+    <div id="modalCertificado" class="modal-cert">
+        <div class="certificado-papel" id="areaCertificado">
+            <div style="font-size: 3em; color: #2d6a4f;"><i class="fa-solid fa-award"></i></div>
+            <h2 style="font-size: 2em; margin: 10px 0; color: #1b4332;">CERTIFICADO DE CONSCIÊNCIA ECOLÓGICA</h2>
+            <p style="font-size: 1.1em;">Conferimos o presente certificado a</p>
+            <h1 style="font-size: 2.3em; color: #2d6a4f; border-bottom: 2px solid #52b788; display: inline-block; padding: 0 30px;">{{ usuario }}</h1>
+            <p style="font-size: 1.05em; line-height: 1.6; max-width: 560px; margin: 20px auto;">
+                Pelo excelente compromisso com a sustentabilidade, alcançando o título de <b>Economizador Consciente</b> ao concluir <b>{{ metas_concluidas }} ações práticas</b> em favor do Tempo Ecológico do planeta.
+            </p>
+            <p style="font-size: 0.9em; color: #555;">Emitido em {{ data_hoje }}</p>
+            <div style="margin-top: 30px; border-top: 1px solid #aaa; display: inline-block; padding-top: 8px; width: 320px;">
+                <b>Otavio, Cristiano & Arthur</b><br>
+                <small>Coordenação do Portal Tempo Ecológico</small>
+            </div>
+            <div style="margin-top: 25px; display: flex; gap: 15px; justify-content: center;">
+                <button class="btn-padrao" onclick="window.print()"><i class="fa-solid fa-print"></i> Imprimir / Salvar PDF</button>
+                <button class="btn-padrao" style="background: #6c757d;" onclick="fecharCertificado()">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast"></div>
+
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // Scroll Reveal
+        let audioCtx = null;
+        let somAtivo = false;
+        let intervaloPassaros = null;
+
+        function alternarSom() {
+            const btn = document.getElementById("btnSom");
+            if (!somAtivo) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const bufferSize = 2 * audioCtx.sampleRate;
+                const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+                const output = noiseBuffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) output[i] = Math.random() * 2 - 1;
+
+                const whiteNoise = audioCtx.createBufferSource();
+                whiteNoise.buffer = noiseBuffer;
+                whiteNoise.loop = true;
+
+                const filter = audioCtx.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.value = 320;
+
+                const gainNode = audioCtx.createGain();
+                gainNode.gain.value = 0.04;
+
+                whiteNoise.connect(filter);
+                filter.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                whiteNoise.start(0);
+
+                intervaloPassaros = setInterval(() => {
+                    if (!audioCtx) return;
+                    const osc = audioCtx.createOscillator();
+                    const g = audioCtx.createGain();
+                    osc.type = 'sine';
+                    const freqBase = 1800 + Math.random() * 900;
+                    osc.frequency.setValueAtTime(freqBase, audioCtx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(freqBase + 600, audioCtx.currentTime + 0.15);
+                    g.gain.setValueAtTime(0.015, audioCtx.currentTime);
+                    g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.25);
+                    osc.connect(g);
+                    g.connect(audioCtx.destination);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.25);
+                }, 3200);
+
+                somAtivo = true;
+                btn.classList.add("ativo-som");
+                btn.innerHTML = '<i class="fa-solid fa-volume-high"></i> Som Ativo';
+            } else {
+                if (audioCtx) audioCtx.close();
+                clearInterval(intervaloPassaros);
+                somAtivo = false;
+                btn.classList.remove("ativo-som");
+                btn.innerHTML = '<i class="fa-solid fa-volume-xmark"></i> Som da Floresta';
+            }
+        }
+
+        const materiaisDecomp = [
+            { nome: "🍌 Casca de Banana", tempo: "2 a 12 meses", pct: 5, desc: "Reintegra-se rapidamente ao solo." },
+            { nome: "📰 Papel e Papelão", tempo: "3 a 6 meses", pct: 4, desc: "Celulose biodegradável." },
+            { nome: "🍬 Chiclete", tempo: "5 anos", pct: 15, desc: "Resina sintética." },
+            { nome: "🚬 Filtro de Cigarro", tempo: "10 a 20 anos", pct: 25, desc: "Contém acetato de celulose." },
+            { nome: "🥫 Lata de Alumínio", tempo: "200 a 500 anos", pct: 65, desc: "Leva gerações para oxidar." },
+            { nome: "🧴 Garrafa Plástica (PET)", tempo: "400 a 450 anos", pct: 75, desc: "Gera microplásticos." },
+            { nome: "🔋 Pilhas e Baterias", tempo: "500 a 1.000 anos", pct: 85, desc: "Liberam metais pesados." },
+            { nome: "🍾 Garrafa de Vidro", tempo: "Mais de 4.000 anos", pct: 100, desc: "Quase indestrutível." }
+        ];
+
+        function renderizarDecomp(filtro = "") {
+            const grid = document.getElementById("gridDecomp");
+            grid.innerHTML = "";
+            materiaisDecomp
+                .filter(m => m.nome.toLowerCase().includes(filtro.toLowerCase()) || m.desc.toLowerCase().includes(filtro.toLowerCase()))
+                .forEach(m => {
+                    grid.innerHTML += `
+                        <div class="decomp-card">
+                            <b>${m.nome}</b>
+                            <div style="color: #e63946; font-weight: bold; margin: 5px 0;">⏳ ${m.tempo}</div>
+                            <small style="color: var(--text-muted);">${m.desc}</small>
+                            <div class="barra-tempo-bg"><div class="barra-tempo-fill" style="width: ${m.pct}%;"></div></div>
+                        </div>
+                    `;
+                });
+        }
+        function filtrarDecomp() { renderizarDecomp(document.getElementById("buscaDecomp").value); }
+        renderizarDecomp();
+
+        function abrirCertificado() { document.getElementById("modalCertificado").style.display = "flex"; }
+        function fecharCertificado() { document.getElementById("modalCertificado").style.display = "none"; }
+
         function checarScroll() {
             const elementos = document.querySelectorAll('.revelar');
             const alturaJanela = window.innerHeight;
             elementos.forEach(el => {
-                const topoElemento = el.getBoundingClientRect().top;
-                if (topoElemento < alturaJanela - 80) {
-                    el.classList.add('ativo');
-                }
+                if (el.getBoundingClientRect().top < alturaJanela - 70) el.classList.add('ativo');
             });
         }
         window.addEventListener('scroll', checarScroll);
-        checarScroll();
+        window.addEventListener('load', checarScroll);
 
-        // Mapa Variado de Biomas
-        var mapa = L.map('mapa').setView([-15.7801, -47.9292], 4);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap'
-        }).addTo(mapa);
+        function alternarTema() {
+            document.body.classList.toggle("dark-mode");
+            const isDark = document.body.classList.contains("dark-mode");
+            localStorage.setItem("temaEscuro", isDark);
+            document.getElementById("btnTema").innerHTML = isDark ? '<i class="fa-solid fa-sun"></i> Modo Claro' : '<i class="fa-solid fa-moon"></i> Modo Escuro';
+        }
+        if (localStorage.getItem("temaEscuro") === "true") alternarTema();
 
-        var pontosVariados = [
-            { coords: [-3.4653, -62.2159], titulo: "Florestas da Amazônia", desc: "Ciclos hidrológicos, alta biodiversidade e sucessão florestal rápida." },
-            { coords: [-17.7073, -57.0011], titulo: "Áreas Alagadas do Pantanal", desc: "Dinâmica sazonal extrema de cheias e secas anuais." },
-            { coords: [-22.4114, -42.9657], titulo: "Reserva de Mata Atlântica", desc: "Reflorestamento ativo, recuperação de fauna e fragmentação florestal." },
-            { coords: [-15.9389, -47.8825], titulo: "Savanas do Cerrado", desc: "Adaptações ao fogo natural e raízes profundas no tempo ecológico." },
-            { coords: [-9.1760, -40.3089], titulo: "Caatinga Semiárida", desc: "Estratégias de resistência à seca e flora caducifólia." },
-            { coords: [-30.0346, -51.2177], titulo: "Pampas Sulistas", desc: "Ecossistemas de campos abertos e pastejo natural." }
-        ];
+        const urlParams = new URLSearchParams(window.location.search);
+        const aviso = urlParams.get('aviso');
+        if (aviso) {
+            const toast = document.getElementById("toast");
+            toast.innerHTML = '<i class="fa-solid fa-circle-check"></i> ' + aviso;
+            toast.classList.add("mostrar");
+            setTimeout(() => toast.classList.remove("mostrar"), 3500);
+        }
 
-        pontosVariados.forEach(function(p) {
-            L.marker(p.coords).addTo(mapa).bindPopup("<b>" + p.titulo + "</b><br>" + p.desc);
+        const ctx = document.getElementById('graficoMetas').getContext('2d');
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Concluídas', 'Em Andamento'],
+                datasets: [{ data: [{{ metas_concluidas }}, {{ metas_pendentes }}], backgroundColor: ['#52b788', '#ffb703'], borderWidth: 0 }]
+            },
+            options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
         });
 
-        // Simulador de Tempo com Imagens
+        function filtrarDicas() {
+            const termo = document.getElementById("filtroDicas").value.toLowerCase();
+            document.querySelectorAll("#listaDicas .dica-card").forEach(item => {
+                item.style.display = item.innerText.toLowerCase().includes(termo) ? "flex" : "none";
+            });
+        }
+
+        var mapa = L.map('mapa').setView([15.0, 10.0], 2);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(mapa);
+        var biomasGlobais = [
+            { coords: [-3.4653, -62.2159], titulo: "🌳 Floresta Amazônica", desc: "Maior floresta tropical do mundo." },
+            { coords: [-17.7073, -57.0011], titulo: "🐊 Pantanal", desc: "Maior planície alagável." },
+            { coords: [-22.4114, -42.9657], titulo: "🌿 Mata Atlântica", desc: "Hotspot de biodiversidade." },
+            { coords: [-15.9389, -47.8825], titulo: "🌾 Cerrado", desc: "Savana biodiversa." },
+            { coords: [-9.1760, -40.3089], titulo: "🌵 Caatinga", desc: "Bioma semiárido." },
+            { coords: [-23.8634, -69.1328], titulo: "🏜️ Atacama", desc: "Deserto árido." },
+            { coords: [64.2008, -149.4937], titulo: "❄️ Tundra Ártica", desc: "Solo permafrost." },
+            { coords: [44.4280, -110.5885], titulo: "🌲 Floresta Temperada", desc: "Estações bem definidas." },
+            { coords: [23.4162, 25.6628], titulo: "☀️ Saara", desc: "Maior deserto quente." },
+            { coords: [-2.3333, 34.8333], titulo: "🦁 Serengeti", desc: "Grandes migrações." },
+            { coords: [-0.2280, 23.6560], titulo: "🦍 Floresta do Congo", desc: "Bacia hidrográfica." },
+            { coords: [61.5240, 105.3188], titulo: "🌲 Taiga Siberiana", desc: "Floresta boreal." },
+            { coords: [46.8625, 103.8467], titulo: "🐎 Estepes da Ásia", desc: "Vastas planícies." },
+            { coords: [-18.2871, 147.6992], titulo: "🪸 Grande Barreira", desc: "Recife de corais." }
+        ];
+        biomasGlobais.forEach(b => L.marker(b.coords).addTo(mapa).bindPopup(`<b>${b.titulo}</b><br>${b.desc}`));
+
         function atualizarTempo(valor) {
             const box = document.getElementById("textoTempo");
             const imgBox = document.getElementById("imgTempo");
-
             const dadosTempo = {
-                1: {
-                    texto: "<b>1 Ano (Tempo Ecológico Curto):</b> Estações do ano, floração das plantas, migração de aves e ciclos de cheias dos rios.",
-                    img: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=500&q=60"
-                },
-                2: {
-                    texto: "<b>50 Anos (Tempo Ecológico Médio):</b> Sucessão ecológica: uma área desmatada volta a formar uma floresta jovem e atrai animais.",
-                    img: "https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=500&q=60"
-                },
-                3: {
-                    texto: "<b>10.000 Anos (Transição Ecológica/Evolutiva):</b> Fim da última Era do Gelo, mudanças nos biomas globais e adaptação de espécies.",
-                    img: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=500&q=60"
-                },
-                4: {
-                    texto: "<b>5 Milhões de Anos (Tempo Evolutivo):</b> Surgimento de novas espécies através da seleção natural e isolamento geográfico.",
-                    img: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=500&q=60"
-                },
-                5: {
-                    texto: "<b>100 Milhões de Anos (Tempo Geológico):</b> Separação dos continentes, surgimento de cordilheiras e extinções em massa.",
-                    img: "https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?auto=format&fit=crop&w=500&q=60"
-                }
+                1: { texto: "<b>1 Ano:</b> Estações do ano, floração e migração de aves.", img: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=500&q=60" },
+                2: { texto: "<b>50 Anos:</b> Sucessão ecológica e recuperação florestal.", img: "https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=500&q=60" },
+                3: { texto: "<b>10.000 Anos:</b> Fim da última Era do Gelo.", img: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=500&q=60" },
+                4: { texto: "<b>5 Milhões de Anos:</b> Surgimento de novas espécies.", img: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=500&q=60" },
+                5: { texto: "<b>100 Milhões de Anos:</b> Separação dos continentes.", img: "https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?auto=format&fit=crop&w=500&q=60" }
             };
-
-            imgBox.style.opacity = "0.3";
+            imgBox.classList.add("img-trocando");
             setTimeout(() => {
                 box.innerHTML = dadosTempo[valor].texto;
                 imgBox.src = dadosTempo[valor].img;
-                imgBox.style.opacity = "1";
-            }, 150);
+                imgBox.classList.remove("img-trocando");
+            }, 220);
         }
 
-        // Calculadora
         function calcularImpacto() {
             const banho = document.getElementById("diasBanho").value || 0;
             const tomada = document.getElementById("aparelhosTomada").value || 0;
-            
-            const litrosAgua = banho * 36;
-            const kwhEconomizado = tomada * 1.5;
-
-            const res = document.getElementById("resultadoCalc");
-            res.innerHTML = `Com base nas suas escolhas semanais: você economiza cerca de <b>${litrosAgua} litros de água</b> e evita o equivalente a <b>${kwhEconomizado.toFixed(1)} kWh</b> de energia desperdiçada!`;
+            document.getElementById("resultadoCalc").innerHTML = 
+                `Com base nas suas escolhas semanais: você economiza cerca de <b>${banho * 36} litros de água</b> e evita o equivalente a <b>${(tomada * 1.5).toFixed(1)} kWh</b> de energia desperdiçada!`;
         }
 
-        // Quiz Aprimorado (Lógica Completa)
         const perguntasQuiz = [
             {
                 pergunta: "1. Qual escala de tempo estuda a recuperação de uma floresta após uma queimada?",
                 opcoes: [
-                    { texto: "A) Tempo Ecológico", correto: true, explicacao: "Correto! A sucessão ecológica ocorre em décadas ou séculos." },
-                    { texto: "B) Tempo Geológico", correto: false, explicacao: "Quase! O Tempo Geológico trata de milhões de anos." },
-                    { texto: "C) Tempo Evolutivo", correto: false, explicacao: "Incorreto. O Tempo Evolutivo foca no surgimento de novas espécies." }
+                    { texto: "A) Tempo Ecológico", correto: true, explicacao: "Correto! Sucessão ecológica." },
+                    { texto: "B) Tempo Geológico", correto: false, explicacao: "Incorreto. Milhões de anos." },
+                    { texto: "C) Tempo Evolutivo", correto: false, explicacao: "Incorreto." }
                 ]
             },
             {
-                pergunta: "2. O surgimento de novas espécies através da adaptação e seleção natural ocorre em qual escala?",
+                pergunta: "2. Qual bioma possui solo congelado (permafrost) no extremo norte?",
                 opcoes: [
-                    { texto: "A) Tempo Ecológico", correto: false, explicacao: "Incorreto. Mudanças ecológicas são mais rápidas." },
-                    { texto: "B) Tempo Evolutivo", correto: true, explicacao: "Exato! O Tempo Evolutivo engloba milênios e milhões de anos de adaptação." },
-                    { texto: "C) Tempo Sazonal", correto: false, explicacao: "Incorreto. O tempo sazonal dura apenas meses." }
+                    { texto: "A) Savana", correto: false, explicacao: "Incorreto." },
+                    { texto: "B) Tundra Ártica", correto: true, explicacao: "Exato! Tundra possui permafrost." },
+                    { texto: "C) Mata Atlântica", correto: false, explicacao: "Incorreto." }
                 ]
             },
             {
-                pergunta: "3. A separação dos continentes e grandes extinções em massa pertencem a qual escala?",
+                pergunta: "3. A separação dos continentes pertence a qual escala?",
                 opcoes: [
-                    { texto: "A) Tempo Ecológico", correto: false, explicacao: "Incorreto. É uma escala muito curta para tectônica de placas." },
-                    { texto: "B) Tempo Evolutivo", correto: false, explicacao: "Quase, mas eventos tectônicos globais abrangem eras ainda maiores." },
-                    { texto: "C) Tempo Geológico", correto: true, explicacao: "Perfeito! O Tempo Geológico mede eras de milhões a bilhões de anos." }
+                    { texto: "A) Tempo Ecológico", correto: false, explicacao: "Incorreto." },
+                    { texto: "B) Tempo Evolutivo", correto: false, explicacao: "Incorreto." },
+                    { texto: "C) Tempo Geológico", correto: true, explicacao: "Perfeito! Eras de milhões/bilhões de anos." }
                 ]
             }
         ];
-
-        let perguntaAtual = 0;
-        let pontuacaoTotal = 0;
-
+        let perguntaAtual = 0, pontuacaoTotal = 0;
         function carregarQuiz() {
             const p = perguntasQuiz[perguntaAtual];
             document.getElementById("perguntaQuiz").innerText = p.pergunta;
-            
             const divOpcoes = document.getElementById("opcoesQuiz");
             divOpcoes.innerHTML = "";
             document.getElementById("feedbackQuiz").innerText = "";
             document.getElementById("feedbackQuiz").style.backgroundColor = "transparent";
-
             p.opcoes.forEach(op => {
                 const btn = document.createElement("button");
                 btn.className = "quiz-opcao";
@@ -660,56 +798,35 @@
                 divOpcoes.appendChild(btn);
             });
         }
-
         function responderQuiz(correto, explicacao, botao) {
-            const botoes = document.querySelectorAll('.quiz-opcao');
-            botoes.forEach(b => b.onclick = null);
-
+            document.querySelectorAll('.quiz-opcao').forEach(b => b.onclick = null);
             const feedback = document.getElementById("feedbackQuiz");
             feedback.innerText = explicacao;
-
+            feedback.style.padding = "12px";
             if (correto) {
                 pontuacaoTotal++;
-                botao.style.backgroundColor = "#d8f3dc";
-                botao.style.color = "#1b4332";
-                feedback.style.color = "#1b4332";
-                feedback.style.backgroundColor = "#d8f3dc";
-                feedback.style.padding = "10px";
+                botao.style.backgroundColor = "#d8f3dc"; botao.style.color = "#1b4332";
+                feedback.style.backgroundColor = "#d8f3dc"; feedback.style.color = "#1b4332";
             } else {
-                botao.style.backgroundColor = "#ffe5ec";
-                botao.style.color = "#900";
-                feedback.style.color = "#900";
-                feedback.style.backgroundColor = "#ffe5ec";
-                feedback.style.padding = "10px";
+                botao.style.backgroundColor = "#ffe5ec"; botao.style.color = "#900";
+                feedback.style.backgroundColor = "#ffe5ec"; feedback.style.color = "#900";
             }
-
             setTimeout(() => {
                 perguntaAtual++;
-                if (perguntaAtual < perguntasQuiz.length) {
-                    carregarQuiz();
-                } else {
-                    document.getElementById("containerQuiz").innerHTML = `
-                        <div style="text-align: center; padding: 20px;">
-                            <h3>🎉 Quiz Concluído!</h3>
-                            <p style="font-size: 1.2em; margin: 15px 0;">Você acertou <b>${pontuacaoTotal}</b> de <b>${perguntasQuiz.length}</b> perguntas.</p>
-                            <button onclick="reiniciarQuiz()" style="padding: 10px 20px; background: #2d6a4f; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">Tentar Novamente</button>
-                        </div>
-                    `;
-                }
-            }, 2500);
+                if (perguntaAtual < perguntasQuiz.length) carregarQuiz();
+                else document.getElementById("containerQuiz").innerHTML = `
+                    <div style="text-align: center; padding: 20px;">
+                        <h3>🎉 Quiz Concluído!</h3>
+                        <p style="font-size: 1.2em; margin: 15px 0;">Você acertou <b>${pontuacaoTotal}</b> de <b>${perguntasQuiz.length}</b> perguntas.</p>
+                        <button onclick="reiniciarQuiz()" class="btn-padrao">Tentar Novamente</button>
+                    </div>`;
+            }, 2200);
         }
-
         function reiniciarQuiz() {
-            perguntaAtual = 0;
-            pontuacaoTotal = 0;
-            document.getElementById("containerQuiz").innerHTML = `
-                <p id="perguntaQuiz" style="font-size: 1.1em; font-weight: bold; margin-bottom: 20px;"></p>
-                <div id="opcoesQuiz"></div>
-                <p id="feedbackQuiz" style="font-weight: bold; margin-top: 15px; border-radius: 6px;"></p>
-            `;
+            perguntaAtual = 0; pontuacaoTotal = 0;
+            document.getElementById("containerQuiz").innerHTML = `<p id="perguntaQuiz" style="font-size: 1.1em; font-weight: bold; margin-bottom: 20px;"></p><div id="opcoesQuiz"></div><p id="feedbackQuiz" style="font-weight: bold; margin-top: 15px; border-radius: 6px;"></p>`;
             carregarQuiz();
         }
-
         carregarQuiz();
     </script>
 </body>
